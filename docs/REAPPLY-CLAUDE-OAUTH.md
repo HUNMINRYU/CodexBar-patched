@@ -6,6 +6,10 @@ keychain cache item needs a prompt, the CLI/app fails with:
 
 `Claude OAuth credentials read failed: CodexBar cache is temporarily unavailable.`
 
+or, once the file fallback exists but the access token is stale:
+
+`Claude OAuth token expired. CodexBar CLI does not launch Claude to refresh credentials.`
+
 Claude Code itself can still be logged in. The official binary will not
 read `Claude Code-credentials` without UI.
 
@@ -17,7 +21,9 @@ codexbar usage --provider claude --source oauth --format json --pretty
 ```
 
 Writes `~/.claude/.credentials.json` (0600) from the Claude Code keychain
-item. Restart CodexBar or open the menu once.
+item. If that token is expired, the script refreshes it (Claude CLI
+User-Agent) and updates both the file and `Claude Code-credentials`.
+Restart CodexBar or open the menu once. Access tokens last about 8 hours.
 
 ## Patched-app path
 
