@@ -43,6 +43,25 @@ struct SettingsStoreTests {
     }
 
     @Test
+    func `preserves experimental Claude OAuth keychain reader strategy`() throws {
+        let suite = "SettingsStoreTests-claude-oauth-strategy"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defaults.removePersistentDomain(forName: suite)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(
+            ClaudeOAuthKeychainReadStrategy.securityCLIExperimental.rawValue,
+            forKey: "claudeOAuthKeychainReadStrategy")
+
+        let store = SettingsStore(
+            userDefaults: defaults,
+            configStore: testConfigStore(suiteName: suite),
+            zaiTokenStore: NoopZaiTokenStore(),
+            syntheticTokenStore: NoopSyntheticTokenStore())
+
+        #expect(store.claudeOAuthKeychainReadStrategy == .securityCLIExperimental)
+    }
+
+    @Test
     func `persists refresh frequency across instances`() throws {
         let suite = "SettingsStoreTests-persist"
         let defaultsA = try #require(UserDefaults(suiteName: suite))

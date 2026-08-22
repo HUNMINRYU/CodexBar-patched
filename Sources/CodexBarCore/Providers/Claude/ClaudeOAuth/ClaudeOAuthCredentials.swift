@@ -2989,6 +2989,21 @@ public enum ClaudeOAuthCredentialsStore {
         return self.pendingCodexBarOAuthKeychainCacheClearStore
     }
 
+    static var securityCLIKeychainAccessAllowed: Bool {
+        #if DEBUG
+        if let override = self.taskKeychainAccessOverride {
+            return !override
+        }
+        if KeychainAccessGate.currentOverrideForTesting == true {
+            return false
+        }
+        if self.hasTaskKeychainTestingOverride {
+            return true
+        }
+        #endif
+        return !KeychainAccessGate.isDisabled
+    }
+
     static var keychainAccessAllowed: Bool {
         #if DEBUG
         if let override = self.taskKeychainAccessOverride {
@@ -3065,7 +3080,11 @@ public enum ClaudeOAuthCredentialsStore {
         mode: ClaudeOAuthKeychainPromptMode = ClaudeOAuthKeychainPromptPreference.current(),
         allowKeychainPrompt: Bool = true) -> Bool
     {
-        guard self.keychainAccessAllowed else { return false }
+        if self.shouldPreferSecurityCLIKeychainRead() {
+            guard self.securityCLIKeychainAccessAllowed else { return false }
+        } else {
+            guard self.keychainAccessAllowed else { return false }
+        }
         switch mode {
         case .never:
             return false
@@ -3315,6 +3334,9 @@ extension ClaudeOAuthCredentialsStore {
             return false
         }
         #endif
+        // The experimental reader invokes `/usr/bin/security` directly and must not be blocked by the
+        // Security.framework preflight that only describes the native-reader path.
+        guard !self.shouldPreferSecurityCLIKeychainRead() else { return false }
         let mode = ClaudeOAuthKeychainPromptPreference.current()
         guard self.shouldAllowClaudeCodeKeychainAccess(mode: mode, allowKeychainPrompt: false) else { return false }
         return switch KeychainAccessPreflight.checkGenericPassword(service: self.claudeKeychainService, account: nil) {

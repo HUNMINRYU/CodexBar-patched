@@ -815,15 +815,7 @@ extension SettingsStore {
         let key = "claudeOAuthKeychainReadStrategy"
         guard let raw = userDefaults.string(forKey: key) else { return nil }
         guard let strategy = ClaudeOAuthKeychainReadStrategy(rawValue: raw) else { return raw }
-        guard strategy == .securityCLIExperimental else { return raw }
-
-        let migrated = ClaudeOAuthKeychainReadStrategy.securityFramework.rawValue
-        userDefaults.set(migrated, forKey: key)
-        let promptModeKey = "claudeOAuthKeychainPromptMode"
-        if userDefaults.string(forKey: promptModeKey) == nil {
-            userDefaults.set(ClaudeOAuthKeychainPromptMode.never.rawValue, forKey: promptModeKey)
-        }
-        return migrated
+        return strategy.rawValue
     }
 
     private static func loadConfettiOnResetDefaults(userDefaults: UserDefaults) -> (session: Bool, weekly: Bool) {

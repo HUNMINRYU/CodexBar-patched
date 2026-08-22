@@ -1309,6 +1309,13 @@ extension TTYCommandRunner {
         if env["HOME"]?.isEmpty ?? true {
             env["HOME"] = home
         }
+        let userName = NSUserName()
+        if env["USER"]?.isEmpty ?? true {
+            env["USER"] = userName
+        }
+        if env["LOGNAME"]?.isEmpty ?? true {
+            env["LOGNAME"] = userName
+        }
         if env["TERM"]?.isEmpty ?? true {
             env["TERM"] = "xterm-256color"
         }

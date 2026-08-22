@@ -29,6 +29,17 @@ User-facing behavior and troubleshooting live in [Keychain prompts](keychain-pro
 - `KeychainCacheStore` retains its existing ACL-creation fallback and disabled-mode in-memory cookie behavior; those
   are separate from this prompt-containment change.
 
+## Claude OAuth GUI recovery (2026-08-14 / rebased 2026-08-22)
+
+Official 0.54.x still remaps `securityCLIExperimental` back to `securityFramework` and can treat
+an interaction-required CodexBar OAuth cache item as a terminal error. This branch keeps the
+experimental `/usr/bin/security` reader selectable, gives it its own access gate, and fills
+missing `USER`/`LOGNAME` in GUI-launched PTYs.
+
+On an official (unpatched) build, restore Claude Code's keychain payload to
+`~/.claude/.credentials.json` with `Scripts/restore-claude-oauth-credentials.sh` so the file
+fallback can succeed while the cache item requires interaction.
+
 ## Unified legacy migration
 
 `CodexBarConfigMigrator` is the single migration owner for retired token, cookie, MiniMax, Kimi, OpenCode, and token-

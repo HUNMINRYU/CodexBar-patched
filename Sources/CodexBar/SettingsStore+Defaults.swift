@@ -726,8 +726,7 @@ extension SettingsStore {
             guard let raw = self.defaultsState.claudeOAuthKeychainReadStrategyRaw else {
                 return .securityFramework
             }
-            let strategy = ClaudeOAuthKeychainReadStrategy(rawValue: raw) ?? .securityFramework
-            return strategy == .securityCLIExperimental ? .securityFramework : strategy
+            return ClaudeOAuthKeychainReadStrategy(rawValue: raw) ?? .securityFramework
         }
         set {
             self.defaultsState.claudeOAuthKeychainReadStrategyRaw = newValue.rawValue

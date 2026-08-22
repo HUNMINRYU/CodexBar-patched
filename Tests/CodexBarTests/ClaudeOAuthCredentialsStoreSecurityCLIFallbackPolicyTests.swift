@@ -106,4 +106,61 @@ struct ClaudeOAuthCredentialsStoreSecurityCLIFallbackPolicyTests {
             }
         }
     }
+
+    @Test
+    func `experimental reader bypasses native preflight when security CLI is enabled`() {
+        let service = "com.steipete.codexbar.cache.tests.\(UUID().uuidString)"
+        KeychainCacheStore.withServiceOverrideForTesting(service) {
+            KeychainAccessGate.withTaskOverrideForTesting(false) {
+                KeychainCacheStore.setTestStoreForTesting(true)
+                defer { KeychainCacheStore.setTestStoreForTesting(false) }
+
+                ClaudeOAuthCredentialsStore.withIsolatedMemoryCacheForTesting {
+                    ClaudeOAuthCredentialsStore.invalidateCache()
+                    defer { ClaudeOAuthCredentialsStore.invalidateCache() }
+
+                    let fallbackData = self.makeCredentialsData(
+                        accessToken: "security-cli-preflight-bypass",
+                        expiresAt: Date(timeIntervalSinceNow: 3600))
+                    final class Counter: @unchecked Sendable {
+                        var value = 0
+                    }
+                    let preflightCalls = Counter()
+                    let preflightOverride: (String, String?) -> KeychainAccessPreflight.Outcome = { _, _ in
+                        preflightCalls.value += 1
+                        return .interactionRequired
+                    }
+
+                    let synced = KeychainAccessPreflight.withCheckGenericPasswordOverrideForTesting(
+                        preflightOverride,
+                        operation: {
+                            ClaudeOAuthKeychainReadStrategyPreference.withTaskOverrideForTesting(
+                                .securityCLIExperimental,
+                                operation: {
+                                    ClaudeOAuthKeychainPromptPreference.withTaskOverrideForTesting(
+                                        .always,
+                                        operation: {
+                                            ProviderInteractionContext.$current.withValue(.background) {
+                                                ClaudeOAuthCredentialsStore.withClaudeKeychainOverridesForTesting(
+                                                    data: fallbackData,
+                                                    fingerprint: nil)
+                                                {
+                                                    ClaudeOAuthCredentialsStore.withSecurityCLIReadOverrideForTesting(
+                                                        .data(fallbackData))
+                                                    {
+                                                        ClaudeOAuthCredentialsStore
+                                                            .syncFromClaudeKeychainWithoutPrompt(now: Date())
+                                                    }
+                                                }
+                                            }
+                                        })
+                                })
+                        })
+
+                    #expect(synced)
+                    #expect(preflightCalls.value == 0)
+                }
+            }
+        }
+    }
 }

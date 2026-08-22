@@ -191,6 +191,8 @@ struct TTYCommandRunnerEnvTests {
             loginPATH: nil,
             home: "/Users/fallback")
         #expect(merged["HOME"] == "/Users/fallback")
+        #expect(merged["USER"] == NSUserName())
+        #expect(merged["LOGNAME"] == NSUserName())
         #expect(merged["TERM"] == "xterm-256color")
     }
 
